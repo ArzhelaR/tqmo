@@ -19,7 +19,8 @@ from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.quadmesh_analysis import QuadMeshTopoAnalysis
 from environment.quadmesh_env.envs.mesh_conv import get_x
-from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge
+from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, \
+ auto_cleanup
 from environment.observation_register import ObservationRegistry
 from view.window import window_data, graph
 from mesh_display import MeshDisplay
@@ -30,8 +31,6 @@ class Actions(Enum):
     FLIP_CNTCW = 1
     SPLIT = 2
     COLLAPSE = 3
-    CLEANUP = 4
-
 
 class QuadMeshEnv(gym.Env):
     """
@@ -105,10 +104,10 @@ class QuadMeshEnv(gym.Env):
 
         self.actions_info = {
             "n_flip_cntcw": 0,
-            "n_flip_ccw": 0,
+            "n_flip_cw": 0,
             "n_split": 0,
             "n_collapse": 0,
-            "n_cleanup": 0,
+            "n_auto_cleanup": 0,
         }
 
         # Definition of an observation register if required
@@ -166,13 +165,13 @@ class QuadMeshEnv(gym.Env):
         self.close()
         self.observation = self._get_obs()
         self.ep_len = 0
-        info = self._get_info(terminated=False,valid_action=None, action=(None,None), mesh_reward=None)
+        info = self._get_info(terminated=False,valid_action=None, action=(None,None), mesh_reward=None, nb_auto_cleanup=0)
         self.actions_info = {
             "n_flip_cw": 0,
             "n_flip_cntcw": 0,
             "n_split": 0,
             "n_collapse": 0,
-            "n_cleanup": 0,
+            "n_auto_cleanup": 0,
         }
 
         if self.render_mode=="human":
@@ -189,7 +188,7 @@ class QuadMeshEnv(gym.Env):
         self.darts_selected = darts_list
         return irregularities
 
-    def _get_info(self, terminated, valid_action, action, mesh_reward):
+    def _get_info(self, terminated, valid_action, action, mesh_reward, nb_auto_cleanup):
         return {
             "distance": self._mesh_score - self._ideal_score,
             "mesh_reward" : mesh_reward,
@@ -202,11 +201,10 @@ class QuadMeshEnv(gym.Env):
             "flip_cntcw": 1.0 if action[0]==Actions.FLIP_CNTCW.value else 0.0,
             "split": 1.0 if action[0]==Actions.SPLIT.value else 0.0,
             "collapse": 1.0 if action[0]==Actions.COLLAPSE.value else 0.0,
-            "cleanup": 1.0 if action[0]==Actions.CLEANUP.value else 0.0,
+            "auto_cleanup": nb_auto_cleanup,
             "invalid_flip": 1.0 if (action[0]==Actions.FLIP_CW.value or action[0]==Actions.FLIP_CNTCW.value) and not valid_action else 0.0,
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
-            "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,
             "mesh" : self.mesh,
             "mesh_analysis" : self.mesh_analysis,
             "darts_selected" : self.darts_selected,
@@ -233,6 +231,7 @@ class QuadMeshEnv(gym.Env):
         mesh_reward = 0
         reward = 0
         terminated = False
+        nb_auto_cleanup = 0
 
         if dart_id != -1 :
             d = Dart(self.mesh, dart_id)
@@ -251,14 +250,14 @@ class QuadMeshEnv(gym.Env):
             elif action[0] == Actions.COLLAPSE.value:
                 self.actions_info["n_collapse"] += 1
                 valid_action = collapse_edge(self.mesh_analysis, n1, n2, check_mesh_structure=self.debug)
-            elif action[0] == Actions.CLEANUP.value:
-                self.actions_info["n_cleanup"] += 1
-                valid_action = cleanup_edge(self.mesh_analysis, n1, n2, check_mesh_structure=self.debug)
             else:
                 raise ValueError("Action not defined")
 
             if valid_action:
                 # An episode is done if the actual score is the same as the ideal
+                nb_auto_cleanup = auto_cleanup(self.mesh_analysis)
+                if nb_auto_cleanup > 0 :
+                    self.actions_info["n_auto_cleanup"] += nb_auto_cleanup
                 next_nodes_score, self.next_mesh_score, _= self.mesh_analysis.global_score(mesh_before = mesh_before)
                 self.last_nodes_scores = self._nodes_scores
                 terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
@@ -283,7 +282,7 @@ class QuadMeshEnv(gym.Env):
         else:
             truncated = False
 
-        info = self._get_info(terminated, valid_action, action, mesh_reward)
+        info = self._get_info(terminated, valid_action, action, mesh_reward, nb_auto_cleanup)
 
         if self.render_mode == "human":
             self._render_frame()

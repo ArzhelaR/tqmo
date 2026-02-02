@@ -350,10 +350,21 @@ class QuadMeshTopoAnalysis(QuadMeshAnalysis):
         d11 = d1.get_beta(1)
         d111 = d11.get_beta(1)
 
+        n1 = d.get_node()
+        n2 = d1.get_node()
+        n3 = d11.get_node()
+        n4 = d111.get_node()
+
         if d11.get_beta(2) is not None:
             return False
         elif d1.get_beta(2) is not None and d111.get_beta(2) is not None:
             return False
+        elif d1.get_beta(2) is None and d111.get_beta(2) is None:
+            return False
+        elif d1.get_beta(2) is None and n1.get_ideal_adjacency() != 3 and n4.get_ideal_adjacency() != 3:
+                return False
+        elif d111.get_beta(2) is None and n2.get_ideal_adjacency() != 3 and n3.get_ideal_adjacency() != 3:
+                return False
         else:
             return True
 
@@ -369,8 +380,9 @@ class QuadMeshTopoAnalysis(QuadMeshAnalysis):
 
     def isTruncated(self, darts_list)-> bool:
         for d_id in darts_list:
-            if self.isValidAction(d_id, 4):
-                return False
+            if self.mesh.dart_info[d_id,0] >=0:
+                if self.isValidAction(d_id, 4):
+                    return False
         return True
 
     def isFuseOk(self, d: Dart) -> bool:

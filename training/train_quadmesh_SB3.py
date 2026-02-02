@@ -109,7 +109,7 @@ class TensorboardCallback(BaseCallback):
             "nb_flip_cntcw": 0,
             "nb_split": 0,
             "nb_collapse": 0,
-            "nb_cleanup": 0,
+            "nb_auto_cleanup": 0,
             "nb_invalid_flip": 0,
             "nb_invalid_split": 0,
             "nb_invalid_collapse": 0,
@@ -133,7 +133,7 @@ class TensorboardCallback(BaseCallback):
         self.actions_info["nb_flip_cntcw"] += self.locals["infos"][0].get("flip_cntcw", 0.0)
         self.actions_info["nb_split"] += self.locals["infos"][0].get("split", 0.0)
         self.actions_info["nb_collapse"] += self.locals["infos"][0].get("collapse", 0.0)
-        self.actions_info["nb_cleanup"] += self.locals["infos"][0].get("cleanup", 0.0)
+        self.actions_info["nb_auto_cleanup"] += self.locals["infos"][0].get("auto_cleanup", 0.0)
         self.actions_info["nb_invalid_flip"] += self.locals["infos"][0].get("invalid_flip", 0.0)
         self.actions_info["nb_invalid_split"] += self.locals["infos"][0].get("invalid_split", 0.0)
         self.actions_info["nb_invalid_collapse"] += self.locals["infos"][0].get("invalid_collapse", 0.0)
@@ -159,11 +159,10 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("actions/nb_flip_cntcw", self.actions_info["nb_flip_cntcw"])
             self.logger.record("actions/nb_split", self.actions_info["nb_split"])
             self.logger.record("actions/nb_collapse", self.actions_info["nb_collapse"])
-            self.logger.record("actions/nb_cleanup", self.actions_info["nb_cleanup"])
+            self.logger.record("actions/nb_auto_cleanup", self.actions_info["nb_auto_cleanup"])
             self.logger.record("actions/invalid_flip", self.actions_info["nb_invalid_flip"]*100/(self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) if (self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) > 0 else 0)
             self.logger.record("actions/invalid_split", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
             self.logger.record("actions/invalid_collapse", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
-            self.logger.record("actions/invalid_cleanup", self.actions_info["nb_invalid_cleanup"]*100/self.actions_info["nb_cleanup"]if self.actions_info["nb_cleanup"] > 0 else 0)
             self.logger.record("episode_mesh_reward", self.mesh_reward)
             self.logger.record("episode_reward", self.current_episode_reward)
             self.logger.record("normalized_return", self.normalized_return)
@@ -245,7 +244,7 @@ if __name__ == '__main__':
 
     parameters_dir = os.path.join(config["paths"]["parameters_saving_dir"], experiment_name)
     os.makedirs(parameters_dir, exist_ok=True)
-    shutil.copy("training/config/quadmesh_config_PPO_SB3.yaml", os.path.join(parameters_dir, experiment_name))
+    #shutil.copy("../training/config/quadmesh_config_PPO_SB3.yaml", os.path.join(parameters_dir, experiment_name))
 
     # TRAINING MESHES
     training_dataset = read_dataset(config["dataset"]["training_dataset_dir"])
@@ -266,7 +265,7 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    # # WANDB
+    # WANDB
     # run = wandb.init(
     #     project="Quadmesh-learning",
     #     name=config["experiment_name"],
@@ -343,18 +342,18 @@ if __name__ == '__main__':
     #     tensorboard_log=log_dir
     # )
 
-    model = PPO.load("training/policy_saved/e1/full-dataset-obs36-10darts-v0/full-dataset-obs36-10darts-v0_5000000_steps.zip", env=wrapped_env, tensorboard_log=log_dir)
+    model = PPO.load("training/policy_saved/e4/4-actions-autocleanup-v2.zip", env=wrapped_env, tensorboard_log=log_dir)
 
     tb_callback=TensorboardCallback(model)
 
-    tb_callback.set_state({"episode_count": 83140})
+    tb_callback.set_state({"episode_count": 79875})
 
     start_time = time.perf_counter()
     print("-----------Starting learning-----------")
     model.learn(
         total_timesteps=config["total_timesteps"],
         tb_log_name=config["experiment_name"],
-        callback=[HParamCallback(),tb_callback, checkpoint_callback], # , WandbCallback(model_save_path=config["paths"]["wandb_model_saving_dir"]+config["experiment_name"])
+        callback= [HParamCallback(),tb_callback, checkpoint_callback], #WandbCallback(model_save_path=config["paths"]["wandb_model_saving_dir"]+config["experiment_name"]),
         progress_bar=True,
         reset_num_timesteps=False
     )
