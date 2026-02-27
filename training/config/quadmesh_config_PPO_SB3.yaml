@@ -1,21 +1,21 @@
 project_name : "Quadmesh"
-experiment_name : "4-actions-autocleanup-v2"
+experiment_name : "cleanup-flag-newscore-v2"
 
 description : "Apprentissage avec une observation de taille 36. Dataset mixte v2"
 
-total_timesteps : 3000000
+total_timesteps : 7500000
 
 paths:
-  log_dir : "training/results/e4/"
-  policy_saving_dir : "training/policy_saved/e4/"
-  wandb_model_saving_dir : "training/wandb_models/e4/"
-  episode_recording_dir: "training/results/e4/episode_recordings/" # Not working
-  observation_counts_dir: "training/results/e4/observation_counts/"
-  parameters_saving_dir : "training/results/e4/parameters/"
+  log_dir : "training/results/e5/"
+  policy_saving_dir : "training/policy_saved/e5/"
+  wandb_model_saving_dir : "training/wandb_models/e5/"
+  episode_recording_dir: "training/results/e5/episode_recordings/" # Not working
+  observation_counts_dir: "training/results/e5/observation_counts/"
+  parameters_saving_dir : "training/results/e5/parameters/"
 
 dataset:
-  training_dataset_dir : "training/dataset/training_dataset"
-  exploit_dataset_dir : "training/dataset/test_dataset"
+  training_dataset_dir : "training/dataset/training_dataset_mesh"
+  exploit_dataset_dir : "training/dataset/test_dataset_mesh"
   #If datasets directory above are set to None, the agent will either train or be exploited on a single mesh file given below
   training_mesh_file_path : "mesh_files/L_config.json"
   evaluation_mesh_file_path : "mesh_files/simple_quad.msh"
@@ -33,7 +33,7 @@ env:
   with_degree_observation : false
   render_mode : null
   obs_count : false
-  analysis_type : "topo" #only the topo analysis type is working
+  analysis_type : "boundary" #only the topo analysis type is working
   debug : false
 
 ppo:

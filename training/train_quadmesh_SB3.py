@@ -244,7 +244,7 @@ if __name__ == '__main__':
 
     parameters_dir = os.path.join(config["paths"]["parameters_saving_dir"], experiment_name)
     os.makedirs(parameters_dir, exist_ok=True)
-    #shutil.copy("../training/config/quadmesh_config_PPO_SB3.yaml", os.path.join(parameters_dir, experiment_name))
+    #shutil.copy("training/config/quadmesh_config_PPO_SB3.yaml", os.path.join(parameters_dir, experiment_name))
 
     # TRAINING MESHES
     training_dataset = read_dataset(config["dataset"]["training_dataset_dir"])
@@ -321,6 +321,7 @@ if __name__ == '__main__':
             deep=config["env"]["deep"],
             action_restriction=config["env"]["action_restriction"],
             with_degree_obs=config["env"]["with_degree_observation"],
+            analysis_type=config["env"]["analysis_type"],
             render_mode=config["env"]["render_mode"],
             obs_count=config["env"]["obs_count"],
             debug=config["env"]["debug"],
@@ -330,23 +331,23 @@ if __name__ == '__main__':
     check_env(env, warn=True)
 
 
-    # model = PPO(
-    #     policy=config["ppo"]["policy"],
-    #     env=wrapped_env,
-    #     n_steps=config["ppo"]["n_steps"],
-    #     n_epochs=config["ppo"]["n_epochs"],
-    #     batch_size=config["ppo"]["batch_size"],
-    #     learning_rate=config["ppo"]["learning_rate"],
-    #     gamma=config["ppo"]["gamma"],
-    #     verbose=1,
-    #     tensorboard_log=log_dir
-    # )
+    model = PPO(
+        policy=config["ppo"]["policy"],
+        env=wrapped_env,
+        n_steps=config["ppo"]["n_steps"],
+        n_epochs=config["ppo"]["n_epochs"],
+        batch_size=config["ppo"]["batch_size"],
+        learning_rate=config["ppo"]["learning_rate"],
+        gamma=config["ppo"]["gamma"],
+        verbose=1,
+        tensorboard_log=log_dir
+    )
 
-    model = PPO.load("training/policy_saved/e4/4-actions-autocleanup-v2.zip", env=wrapped_env, tensorboard_log=log_dir)
+    #model = PPO.load("training/policy_saved/e5/cleanup-flag-newscore-v0.zip", env=wrapped_env, tensorboard_log=log_dir)
 
     tb_callback=TensorboardCallback(model)
 
-    tb_callback.set_state({"episode_count": 79875})
+    #tb_callback.set_state({"episode_count": 83624})
 
     start_time = time.perf_counter()
     print("-----------Starting learning-----------")
