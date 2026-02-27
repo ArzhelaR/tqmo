@@ -40,11 +40,17 @@ class QuadMeshAnalysis(GlobalMeshAnalysis):
                 na = NodeAnalysis(n)
                 if na.on_boundary():
                     angle = na.get_boundary_angle()
-                    ideal_adj = max(round(angle / 90) + 1, 2)
+                    ideal_adj = max(self.round_calc(angle/90) + 1, 2)
                     n.set_ideal_adjacency(ideal_adj)
                 else:
                     n.set_ideal_adjacency(4)
             i += 1
+
+    def round_calc(self, x):
+        if math.isclose((x - math.floor(x)), 0.5):
+            return math.floor(x)+1
+        else:
+            return round(x)
 
     def set_scores(self) -> None:
         i = 0
@@ -361,12 +367,13 @@ class QuadMeshTopoAnalysis(QuadMeshAnalysis):
             return False
         elif d1.get_beta(2) is None and d111.get_beta(2) is None:
             return False
-        elif d1.get_beta(2) is None and n1.get_ideal_adjacency() != 3 and n4.get_ideal_adjacency() != 3:
+        elif d1.get_beta(2) is None:
+            if (n1.get_bdy_flag() !=1 and n4.get_bdy_flag() != 1) or (n2.get_bdy_flag() !=1 and n3.get_bdy_flag() != 1):
                 return False
-        elif d111.get_beta(2) is None and n2.get_ideal_adjacency() != 3 and n3.get_ideal_adjacency() != 3:
+        elif d111.get_beta(2) is None:
+            if (n2.get_bdy_flag() !=1 and n3.get_bdy_flag() !=1) or (n4.get_bdy_flag() !=1 and n1.get_bdy_flag() != 1):
                 return False
-        else:
-            return True
+        return True
 
     def are_nodes_removables(self, nodes_from):
         if len(nodes_from) != len(set(n.id for n in nodes_from)):
