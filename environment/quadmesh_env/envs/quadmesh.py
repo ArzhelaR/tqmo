@@ -56,12 +56,12 @@ class QuadMeshEnv(gym.Env):
             max_episode_steps: int = 300,
             n_darts_selected: int = 20,
             deep: int = 6,
-            render_mode:  Optional[str] = None,
             with_degree_obs: bool = True,
             action_restriction: bool = False,
             obs_count: bool = False,
             analysis_type = "topo",
-            debug = True
+            render_mode: Optional[str] = None,
+            debug=True
     ) -> None:
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -81,12 +81,16 @@ class QuadMeshEnv(gym.Env):
             self.mesh = copy.deepcopy(random.choice(learning_mesh))
             self.mesh_size = 0
 
+        self.max_steps = max_episode_steps
         self.n_darts_selected = n_darts_selected
         self.deep = deep
         self.analysis_type = analysis_type
         self.mesh_analysis = QuadMeshTopoAnalysis(self.mesh)
         self.debug = debug
-        obs_shape = (self.n_darts_selected, self.deep)
+        if self.analysis_type == "boundary" :
+            obs_shape = (self.n_darts_selected, 2*self.deep)
+        else:
+            obs_shape = (self.n_darts_selected, self.deep)
 
         #self.mesh_size = len(self.mesh.nodes)
         #self.nb_darts = len(self.mesh.dart_info)
@@ -97,7 +101,6 @@ class QuadMeshEnv(gym.Env):
         self.restricted = action_restriction
         self.degree_observation = with_degree_obs
         self.nb_invalid_actions = 0
-        self.max_steps = max_episode_steps
         self.episode_count = 0
         self.ep_len = 0
         self.darts_selected = [] # darts id observed
@@ -255,9 +258,10 @@ class QuadMeshEnv(gym.Env):
 
             if valid_action:
                 # An episode is done if the actual score is the same as the ideal
-                nb_auto_cleanup = auto_cleanup(self.mesh_analysis)
-                if nb_auto_cleanup > 0 :
-                    self.actions_info["n_auto_cleanup"] += nb_auto_cleanup
+                if self.analysis_type == "boundary" :
+                    nb_auto_cleanup = auto_cleanup(self.mesh_analysis)
+                    if nb_auto_cleanup > 0 :
+                        self.actions_info["n_auto_cleanup"] += nb_auto_cleanup
                 next_nodes_score, self.next_mesh_score, _= self.mesh_analysis.global_score(mesh_before = mesh_before)
                 self.last_nodes_scores = self._nodes_scores
                 terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
