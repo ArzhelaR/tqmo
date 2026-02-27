@@ -187,7 +187,7 @@ class QuadMeshEnv(gym.Env):
         return self.observation, info
 
     def _get_obs(self):
-        irregularities, darts_list = get_x(self.mesh_analysis, self.n_darts_selected, self.deep, self.analysis_type, self.restricted, self._nodes_scores)
+        irregularities, darts_list = get_x(self.mesh_analysis, self.n_darts_selected, self.deep, self.analysis_type, self.restricted)
         self.darts_selected = darts_list
         return irregularities
 
