@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-#from view.mesh_plotter.mesh_plots import plot_mesh
+# from view.mesh_plotter.mesh_plots import plot_mesh
 
 
 class NodeAnalysis:
@@ -186,7 +186,7 @@ class GlobalMeshAnalysis(ABC):
                 mesh_score += abs(n_score)
             else:
                 nodes_score.append(0)
-        return nodes_score, mesh_score, mesh_ideal_score
+        return nodes_score, mesh_score, abs(mesh_ideal_score)
 
     def get_boundary_darts(self) -> list[Dart]:
         """
