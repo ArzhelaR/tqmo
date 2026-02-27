@@ -8,17 +8,17 @@ import numpy as np
 from mesh_model.reader import read_gmsh
 
 
-def plot_mesh(mesh: Mesh, debug=False, scores=False) -> None:
+def plot_mesh(mesh: Mesh, debug=False, scores=False, irregularities=False) -> None:
     """
     Plot a mesh using matplotlib
     :param mesh: a Mesh
     :param debug: debug mode to plot darts ID and nodes ID
     """
     if scores:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 7))
     else:
         fig, ax = plt.subplots(figsize=(10, 10))
-    subplot_mesh(mesh, debug=debug, scores=scores)
+    subplot_mesh(mesh, debug=debug, scores=scores, irregularities=irregularities)
     plt.tight_layout()
     plt.savefig("bunny.png", dpi=300, bbox_inches="tight", pad_inches=0)
     plt.show(block=True)
@@ -139,35 +139,38 @@ def subplot_mesh(mesh: Mesh, debug=False, id=None, scores=False, irregularities=
                                  va='top')
                 n_id += 1
         if irregularities:
+            ma = QuadMeshTopoAnalysis(mesh)
             n_id = 0
             for n_info in mesh.nodes:
-                n = Node(mesh, n_id)
-                s = -1*n.get_score()
-                teal = "#008080"
-                salmon = "#FA8072"
-                green_pastel = "#77DD77"
-                if s > 0:
-                    color = teal
-                    radius = 0.25
-                    show_text = True
-                elif s < 0:
-                    color = salmon
-                    radius = 0.25
-                    show_text = True
-                else:  # s == 0
-                    color = green_pastel
-                    radius = 0.1  # plus petit
-                    show_text = False
+                if n_info[2] >= 0:
+                    n = Node(mesh, n_id)
+                    s = -1*n.get_score()
+                    teal = "#008080"
+                    salmon = "#FA8072"
+                    green_pastel = "#77DD77"
+                    red = "#C00000"
+                    if s > 0:
+                        color = teal
+                        radius = 0.25
+                        show_text = True
+                    elif s < 0:
+                        color = salmon
+                        radius = 0.25
+                        show_text = True
+                    else:  # s == 0
+                        color = green_pastel
+                        radius = 0.1  # plus petit
+                        show_text = False
 
-                # Dessiner le cercle
-                circle = plt.Circle((n_info[0], n_info[1]), radius=radius,
-                                    color=color, zorder=2)
-                plt.gca().add_patch(circle)
+                    # Dessiner le cercle
+                    circle = plt.Circle((n_info[0], n_info[1]), radius=radius,
+                                        color=color, zorder=2)
+                    plt.gca().add_patch(circle)
 
-                # Ajouter le texte si nécessaire
-                if show_text:
-                    plt.text(n_info[0], n_info[1], f"{s:.0f}", fontsize=17,
-                             color="white", ha="center", va="center", zorder=3)
+                    # Ajouter le texte si nécessaire
+                    if show_text:
+                        plt.text(n_info[0], n_info[1], f"{s:.0f}", fontsize=17,
+                                 color="white", ha="center", va="center", zorder=3)
 
                 n_id += 1
     else:
