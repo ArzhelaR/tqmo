@@ -278,6 +278,22 @@ class Node:
             raise ValueError("No score")
         return score
 
+    def set_bdy_flag(self, bdy_flag: int) -> None:
+        """
+        Set if the node is on boundary, in a corner or inside the mesh
+        :param bdy_flag: -1 if dummy node, 0 if on corner, 1 if on boundary edge, 2 if inside mesh
+        """
+        self.mesh.nodes[self.id, 5] = bdy_flag
+
+    def get_bdy_flag(self):
+        """
+        Get if the node is on boundary, in a corner or inside the mesh
+        :return: -1 if dummy node, 0 if on corner, 1 if on boundary edge, 2 if inside mesh
+        """
+        bdy_flag = self.mesh.nodes[self.id, 5]
+        if bdy_flag == -99:
+            raise ValueError("No boundary flag")
+        return bdy_flag
 
 class Face:
     _mesh_type: type = None

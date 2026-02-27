@@ -39,12 +39,28 @@ def read_medit(filename: string) -> Mesh:
         if "Vertices" == line.strip():
             line = f.readline()
             nb_vertices = line.strip()
+            nb_corners = 1
+            nb_edges = 1
+            all_corner_retrieved = False
             for _ in range(int(nb_vertices)):
                 line = f.readline()
                 ls = line.split()
                 x = float(ls[0])
                 y = float(ls[1])
-                nodes.append([x, y])
+                z = float(ls[2])
+                flag = int(ls[3])
+                if flag == nb_corners and not all_corner_retrieved:
+                    bdy_flag = 0
+                    nb_corners += 1
+                elif flag == nb_edges:
+                    bdy_flag = 1
+                    all_corner_retrieved = True
+                elif flag > nb_edges:
+                    bdy_flag = 1
+                    nb_edges+=1
+                else:
+                    bdy_flag = 2
+                nodes.append([x, y, z, bdy_flag])
         if "Triangles" == line.strip():
             line = f.readline()
             nb_faces = line.strip()
@@ -55,7 +71,17 @@ def read_medit(filename: string) -> Mesh:
                 n1 = int(ls[1])
                 n2 = int(ls[2])
                 faces.append([n0 - 1, n1 - 1, n2 - 1])
-
+        if "Quadrilaterals" == line.strip():
+            line = f.readline()
+            nb_faces = line.strip()
+            for _ in range(int(nb_faces)):
+                line = f.readline()
+                ls = line.split()
+                n0 = int(ls[0])
+                n1 = int(ls[1])
+                n2 = int(ls[2])
+                n3 = int(ls[3])
+                faces.append([n0 - 1, n1 - 1, n2 - 1, n3 - 1])
     f.close()
     mesh = Mesh(nodes, faces)
 
@@ -143,6 +169,10 @@ def read_dataset(dataset_dir) -> list[Mesh]:
         if (f.endswith(".msh")):
             msh_f = dataset_dir + "/" + f
             cmap = read_gmsh(msh_f)
+            mesh_dataset.append(cmap)
+        elif (f.endswith(".mesh")):
+            json_f = dataset_dir + "/" + f
+            cmap = read_medit(json_f)
             mesh_dataset.append(cmap)
         elif (f.endswith(".json")):
             json_f = dataset_dir + "/" + f

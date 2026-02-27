@@ -13,12 +13,12 @@ Mesh class.
 class Mesh:
     def __init__(self, nodes=[], faces=[]):
         """
-        Vertices are stored in a numpy array containing coordinates (x,y, dart id, ideal adjacency, vertex score)
+        Vertices are stored in a numpy array containing coordinates (x,y, dart id, ideal adjacency, vertex score, bdy_flag)
         Faces are stored in a numpy array of simple (dart ids)
         Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id, geo_quality, is_starred )
         Ideal adjacency, vertex scores and geometric quality are not defined here. You must use Mesh analysis class to define them
         """
-        self.nodes = numpy.empty((0, 5), dtype=float)
+        self.nodes = numpy.empty((0, 6), dtype=float)
         self.faces = numpy.empty(0, dtype=int)
         self.dart_info = numpy.empty((0, 7), dtype=int)
         self.first_free_dart = 0
@@ -26,7 +26,12 @@ class Mesh:
         self.first_free_face = 0
 
         for n in nodes:
-            self.add_node(n[0], n[1])
+            if len(n)==2:
+                self.add_node(x=n[0], y=n[1])
+            if len(n)==3:
+                self.add_node(x=n[0], y=n[1])
+            elif len(n)==4:
+                self.add_node(x=n[0], y=n[1], bdy_flag=n[3])
 
         for f in faces:
             if len(f) == 3:
@@ -59,7 +64,7 @@ class Mesh:
         # We filter the faces having the -1 value. An item with this value is a deleted face
         return len(self.active_faces())
 
-    def add_node(self, x: float, y: float) -> Node:
+    def add_node(self, x: float, y: float, bdy_flag=-99) -> Node:
         """
         Add a vertex in the mesh, this node is not connected to a dart here
         The ideal adjacency and vertex score are not defined here
@@ -68,14 +73,14 @@ class Mesh:
         :return: the created node
         """
         if len(self.nodes) <= self.first_free_node:
-            self.nodes = numpy.append(self.nodes, [[x, y, -1, -1, -99]], axis=0)
+            self.nodes = numpy.append(self.nodes, [[x, y, -1, -1, -99, bdy_flag]], axis=0)
             self.first_free_node += 1
             return Node(self, len(self.nodes) - 1)
         elif self.first_free_node >= 0:
             n_id = int(self.first_free_node)
             if isinstance(n_id, int):
                 self.first_free_node = abs(self.nodes[n_id, 2] + 1)
-                self.nodes[n_id] = [x, y, -1, -1, -99]
+                self.nodes[n_id] = [x, y, -1, -1, -99, bdy_flag]
             else:
                 print(n_id)
                 print(type(n_id))
